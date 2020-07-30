@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import sys
 from unittest import TestCase
 
 import pytest
@@ -180,3 +181,48 @@ class TestExtras(TestCase):
         with pytest.raises(ValueError, match=r"'?1'? is not a valid WorkingEnum"):
             # Extra should not be reversible like regular member attrs
             assert WorkingEnum('1') == WorkingEnum.ONE
+
+
+class TestSunderAttrs(TestCase):
+    # Explicitly test sunder attributes described in https://docs.python.org/3/library/enum.html#supported-sunder-names
+    # We already handle callables, so only check static attributes
+
+    def setUp(self):
+        py_version_info = sys.version_info
+        # Change once we drop 2 to: self.py_major, self.py_minor, *_ = sys.version_info
+        self.py_major = py_version_info[0]
+        self.py_minor = py_version_info[1]
+
+    def test_order(self):
+        # Order needs to remain respected
+        class Enum(MatrixEnum):
+            _order_ = 'TWO ONE'
+            TWO = Member(code=2)
+            ONE = Member(code=1)
+        assert [m.code for m in Enum] == [2, 1]
+
+        if self.py_major >= 3:
+            # 3 + Will raise on an order mismatch
+            with pytest.raises(TypeError, match=r"member order does not match _order_"):
+                class Enum(MatrixEnum):
+                    _order_ = 'TWO ONE'
+                    ONE = Member(code=1)
+                    TWO = Member(code=2)
+
+    def test_ignore(self):
+        try:
+            class IgnoredEnum(MatrixEnum):
+                _ignore_ = 'IGNORE_ME'
+                ONE = Member(code=1)
+                TWO = Member(code=2)
+                IGNORE_ME = Member(code=3)
+        except ValueError as e:
+            if self.py_major >= 3 and self.py_minor >= 7:
+                # Ignore only supported in 3.7+
+                assert False, '_ignore_ should be supported in py 3.7+'
+            else:
+                # Otherwise we'll raise on adding a sunder
+                assert '_names_ are reserved for future Enum use' in str(e)
+        else:
+            # 3 should not be included
+            assert [m.code for m in IgnoredEnum] == [1, 2]

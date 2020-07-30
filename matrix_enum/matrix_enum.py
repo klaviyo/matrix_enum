@@ -119,7 +119,7 @@ class _MatrixEnumMeta(EnumMeta):
                     reversed_addressable[item] = value
 
             # Callables are 'special' in that they get bound rather than member'd by the enum.
-            elif key not in ('__module__', '__metaclass__', '__doc__', '__qualname__') \
+            elif key not in ('__module__', '__metaclass__', '__doc__', '__qualname__', '_order_', '_ignore_')\
                     and not (callable(value) or isinstance(value, classmethod)):
                 raise ValueError('{} is not a Member'.format(value))
 

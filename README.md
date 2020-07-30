@@ -139,4 +139,4 @@ ValueError: 4 is not a valid AnimalEnum
 
 ---
 
-This package is owned and maintained by [Klaviyo](https://www.klaviyo.com).
+This package is owned and maintained by [Klaviyo](https://www.klaviyo.com). Check out our [eng blog](https://klaviyo.tech/).

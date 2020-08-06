@@ -3,6 +3,7 @@
 # `MatrixEnum`
 
 [![Build Status](https://travis-ci.com/klaviyo/matrix_enum.svg?token=oiB5ARPJxDf7ncG5fL9x&branch=master)](https://travis-ci.com/klaviyo/matrix_enum)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/matrix_enum)
 
 `MatrixEnum` is a package that provides convenient extensions to python's
 builtin enums to allow for simple construction of enum multi-dimensional members.

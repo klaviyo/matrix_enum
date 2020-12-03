@@ -87,6 +87,7 @@ class _MatrixEnumMeta(EnumMeta):
         homomorphic_extras = _default_set
         allowed_keys = _default_set
         reversed_addressable = dict()
+        names = set(classdict.keys())
         for key, value in sorted(iteritems(classdict)):  # Sorted for consistent behavior across 2/3
 
             if isinstance(value, Member):
@@ -114,9 +115,15 @@ class _MatrixEnumMeta(EnumMeta):
 
                 # Check reverse mappings across the whole set of Members.
                 for item in value._addressable.values():
-                    if reversed_addressable.get(item, False):
+                    if item in reversed_addressable:
                         raise ValueError('Ambiguous Member: {}'.format(item))
                     reversed_addressable[item] = value
+                if key in reversed_addressable and reversed_addressable[key] != value:
+                    raise ValueError('Member name {} is ambiguous with member {} for field lookup'.format(
+                        key,
+                        reversed_addressable[key],
+                    ))
+                reversed_addressable[key] = value
 
             # Callables are 'special' in that they get bound rather than member'd by the enum.
             elif key not in ('__module__', '__metaclass__', '__doc__', '__qualname__', '_order_', '_ignore_')\
@@ -136,6 +143,8 @@ class _MatrixEnumMeta(EnumMeta):
 
     def __call__(cls, value, names=None, *args, **kwargs):
         if names is None:
+            if isinstance(value, cls):  # To make it easier to use MatrixEnums as coercer functions.
+                return value
             # Easiest way to get access to the class field without edge-casing classes with no enum elements is to
             # iterate.
             for item in cls:

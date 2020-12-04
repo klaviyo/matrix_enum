@@ -110,3 +110,6 @@ ENV/
 
 # OSX
 .DS_Store
+
+Pipfile
+Pipfile.lock

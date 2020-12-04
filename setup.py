@@ -8,7 +8,7 @@ with open(path.join(this_directory, 'README.md')) as f:
 
 setup(
     name='matrix_enum',
-    version='1.0.0',
+    version='1.1.0',
     url='https://github.com/klaviyo/matrix_enum',
     author='Klaviyo',
     description='Data structure for multi-dimensional enums',

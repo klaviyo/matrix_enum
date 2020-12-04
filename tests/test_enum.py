@@ -20,6 +20,8 @@ class TestWorkingEnums(TestCase):
         assert isinstance(WorkingEnum.ONE, WorkingEnum)
 
         assert WorkingEnum.ONE is WorkingEnum['ONE']
+        assert WorkingEnum(WorkingEnum.ONE) is WorkingEnum.ONE
+        assert WorkingEnum('ONE') is WorkingEnum.ONE
         assert WorkingEnum(1) is WorkingEnum.ONE
         assert WorkingEnum(1) == WorkingEnum.ONE
         assert WorkingEnum('one') is WorkingEnum('plaintext')
@@ -101,13 +103,19 @@ class TestWorkingEnums(TestCase):
 
 class TestBrokenEnums(TestCase):
     def test_ambiguous_member(self):
-        with pytest.raises(ValueError, match=r"Ambiguous Member: one"):
+        with pytest.raises(
+            ValueError,
+            match=r'Attribute value "one" of Member TWO is ambiguous with an attribute of Member ONE.',
+        ):
             class BadEnum(MatrixEnum):
                 ONE = Member(code=1, description='one', plain_text="plaintext")
                 TWO = Member(code=2, description='one', plain_text="something else plain")
 
     def test_different_member_attrs(self):
-        with pytest.raises(ValueError, match=r"Members have different addressable keys; \['bar'\] vs\. \['foo'\]"):
+        with pytest.raises(
+            ValueError,
+            match=r"Member TWO has different addressable keys from other Members: got \['bar'\], expected \['foo'\].",
+        ):
             class BadEnum(MatrixEnum):
                 ONE = Member(foo=1)
                 TWO = Member(bar=2)
@@ -135,6 +143,21 @@ class TestBrokenEnums(TestCase):
                 ONE = Member(name=1, description='one', plain_text="plaintext")
                 TWO = Member(name=2, description='one', plain_text="something else plain")
 
+    def test_name_keying(self):
+        # If name and attribute keying match, there's no ambiguity, so attributes that match member names are allowed.
+        class GoodEnum(MatrixEnum):
+            ONE = Member(code=1, description='ONE', plain_text="plaintext")
+            TWO = Member(code=2, description='TWO', plain_text="something else plain")
+        assert GoodEnum.ONE is GoodEnum('ONE') is GoodEnum['ONE']
+
+        with pytest.raises(
+            ValueError,
+            match=r'Attribute value "ONE" of Member TWO is ambiguous with another member\'s name.',
+        ):
+            class BadEnum(MatrixEnum):
+                ONE = Member(code=1, description='foo', plain_text="plaintext")
+                TWO = Member(code=2, description='ONE', plain_text="something else plain")
+
     def test_invalid_enums(self):
         with pytest.raises(ValueError, match=r"Key code is not allowed."):
             class BadEnum(MatrixEnum):
@@ -159,7 +182,10 @@ class TestBrokenMembers(TestCase):
 
 class TestExtras(TestCase):
     def test_missing_extra(self):
-        with pytest.raises(ValueError, match=r"Members have different extra keys; \['bar', 'foo'\] vs. \['foo'\]"):
+        with pytest.raises(
+            ValueError,
+            match=r"Member TWO has different extra keys; got \['bar', 'foo'\]; expected \['foo'\].",
+        ):
             class BadEnum(MatrixEnum):
                 ONE = Member(code=1, description='one', plain_text='plaintext').extra(foo=1)
                 TWO = Member(code=2, description='two', plain_text='something else plain').extra(foo=2, bar=2)

@@ -88,14 +88,14 @@ class _MatrixEnumMeta(EnumMeta):
         allowed_keys = _default_set
         reversed_addressable = dict()
         for key, value in sorted(iteritems(classdict)):  # Sorted for consistent behavior across 2/3
-
             if isinstance(value, Member):
                 # Check that all Members have the same addressable (main ctor) keys.
                 if allowed_keys is _default_set:
                     allowed_keys = set(value._addressable.keys())
                 elif set(value._addressable.keys()) != allowed_keys:
                     raise ValueError(
-                        'Members have different addressable keys; {} vs. {}.'.format(
+                        'Member {} has different addressable keys from other Members: got {}, expected {}.'.format(
+                            key,
                             sorted(value._addressable.keys()),
                             sorted(allowed_keys),
                         ),
@@ -106,7 +106,8 @@ class _MatrixEnumMeta(EnumMeta):
                     homomorphic_extras = set(value._extra_homomorphic.keys())
                 elif set(value._extra_homomorphic.keys()) != homomorphic_extras:
                     raise ValueError(
-                        'Members have different extra keys; {} vs. {}.'.format(
+                        'Member {} has different extra keys; got {}; expected {}.'.format(
+                            key,
                             sorted(value._extra_homomorphic.keys()),
                             sorted(homomorphic_extras),
                         ),
@@ -114,9 +115,17 @@ class _MatrixEnumMeta(EnumMeta):
 
                 # Check reverse mappings across the whole set of Members.
                 for item in value._addressable.values():
-                    if reversed_addressable.get(item, False):
-                        raise ValueError('Ambiguous Member: {}'.format(item))
+                    if item in reversed_addressable:
+                        error = 'another member\'s name'
+                        if item not in classdict:
+                            error = 'an attribute of Member {}'.format(
+                                next(k for k, v in iteritems(classdict) if v is reversed_addressable[item])
+                            )
+                        raise ValueError(
+                            'Attribute value "{}" of Member {} is ambiguous with {}.'.format(item, key, error)
+                        )
                     reversed_addressable[item] = value
+                reversed_addressable[key] = value
 
             # Callables are 'special' in that they get bound rather than member'd by the enum.
             elif key not in ('__module__', '__metaclass__', '__doc__', '__qualname__', '_order_', '_ignore_')\

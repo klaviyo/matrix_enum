@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from enum import Enum, EnumMeta
+from enum import Enum, EnumMeta, IntEnum
 
 from six import iteritems, with_metaclass
 
@@ -190,3 +190,38 @@ class MatrixEnum(with_metaclass(_MatrixEnumMeta, Enum)):
     If you need different fields on different members you may need a separate
     mapping object, separate functions on the enum class, or a more advanced Enum.
     """
+
+
+class Integer(int):
+    pass
+
+
+class IntMember(int, Member):
+    def __new__(cls, value, *args, **kwargs):
+        return int.__new__(cls, value)
+
+    def __init__(self, value, **kwargs):
+        super().__init__(**kwargs)
+
+
+class _MatrixIntEnumMeta(_MatrixEnumMeta):
+    def __new__(metacls, cls, bases, classdict):
+        to_bind = dict()
+        for k, v in sorted(iteritems(classdict)):
+            if isinstance(v, IntMember):
+                to_bind[k] = dict()
+                for kk, item in v._addressable.items():
+                    to_bind[k][kk] = item
+
+        to_return = super().__new__(metacls, cls, bases, classdict)
+
+        print(to_bind)
+        for member_name, properties in to_bind.items():
+            for property_name, property_value in properties.items():
+                setattr(getattr(to_return, member_name).value, property_name, property_value)
+
+        return to_return
+
+
+class MatrixIntEnum(Integer, Enum, metaclass=_MatrixIntEnumMeta):
+    pass
